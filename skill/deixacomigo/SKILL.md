@@ -1,6 +1,6 @@
 ---
 name: deixacomigo
-description: Instala o kit deixacomigo no projeto atual (regras no CLAUDE.md, graphify com hooks, revisão externa com Codex/DeepSeek/agy e verificar-etapa). Use quando o usuário pedir "ativar o deixacomigo", "instalar o deixacomigo" ou "usar o deixacomigo neste projeto".
+description: Instala o kit deixacomigo no projeto atual (regras no CLAUDE.md, graphify com hooks, revisão externa com Codex/DeepSeek/agy). Use quando o usuário pedir "ativar o deixacomigo", "instalar o deixacomigo" ou "usar o deixacomigo neste projeto".
 ---
 
 # deixacomigo

@@ -55,4 +55,4 @@ echo "exit=$? bytes_out=$(wc -c < "$S/out.txt")"
 
 - Confirme cada achado lendo o código antes de corrigir; quando der, prove com um teste.
 - O que contradiz uma regra do README é decisão de design: relate ao usuário em vez de mudar.
-- Depois das correções, rode a skill `verificar-etapa`.
+- Depois das correções, rode a verificação (tipos, testes, navegador) descrita no CLAUDE.md.

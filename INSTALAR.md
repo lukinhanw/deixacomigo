@@ -5,7 +5,7 @@ completo. Siga na ordem, sem pedir confirmação a cada passo (só onde indicado
 português do Brasil.
 
 O kit instala no projeto atual: regras (`CLAUDE.md`), busca por grafo (graphify com hooks),
-revisão externa (Codex+DeepSeek, DeepSeek exaustivo, agy) e a skill `verificar-etapa`.
+revisão externa (Codex+DeepSeek, DeepSeek exaustivo, agy) e a regra de verificação antes de dar por pronto.
 
 ## 0. Onde está o kit
 
@@ -36,9 +36,10 @@ apagando o comentário:
   dependências nem comandos padrão: a sessão deduz sozinha.
 - **tools/revisao-contexto.md**: 2 a 5 linhas para o revisor (o que é, stack com versões,
   arquitetura). Os revisores externos não veem o repositório inteiro, só isso e o diff.
-- **.claude/skills/verificar-etapa/SKILL.md**: comandos reais de tipos, testes, serviços e, se
-  houver interface, URL e seletores. Apague as fases que não existem. Teste que cada comando
-  funciona antes de escrevê-lo.
+- **Verificação**: a regra geral já está no CLAUDE.md. Se o projeto tiver um fluxo de verificação
+  que não se adivinha (serviços para subir, portas, seletores, passos em ordem), crie uma skill
+  `verificar-etapa` em `.claude/skills/` só com isso, testando cada comando antes de escrevê-lo.
+  Se não tiver, não crie: não há skill genérica.
 - **.graphifyignore**: acrescente pastas de assets, builds e dados. Depois rode
   `graphify update .` (o executável está em `graphifyDir` do JSON) se mudou algo.
 

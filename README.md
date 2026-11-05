@@ -2,8 +2,8 @@
 
 Kit para deixar um projeto pronto para trabalhar com o Claude Code do mesmo jeito: regras enxutas no
 `CLAUDE.md`, busca no código por grafo (**graphify**, com hooks que mantêm o grafo atualizado),
-**revisão externa** (Codex + DeepSeek, DeepSeek exaustivo e Antigravity) e a skill
-**verificar-etapa**.
+**revisão externa** (Codex + DeepSeek, DeepSeek exaustivo e Antigravity) e a regra de verificação
+antes de dar algo por pronto.
 
 ## Como ativar
 
@@ -26,7 +26,7 @@ Depois da primeira vez, a skill global `deixacomigo` fica instalada e basta dize
 | `tools/codex-deepseek.sh` | Revisão do Codex usando a DeepSeek como modelo (sem gastar a assinatura da OpenAI) |
 | `tools/revisar-deepseek.mjs` | Revisão exaustiva (diff + arquivos inteiros) pela API da DeepSeek |
 | `tools/revisao-contexto.md` | Descrição do projeto que os revisores recebem |
-| `.claude/skills/revisao`, `revisao-agy`, `verificar-etapa` | Fluxos de revisão e verificação |
+| `.claude/skills/revisao`, `revisao-agy` | Fluxos de revisão externa |
 | `.claude/settings.local.json` | Hooks do graphify (consulta antes de buscar, atualiza ao fim de cada resposta) |
 | `.env.local` | Chaves `DEEPSEEK_API_KEY` e `OPENROUTER_API_KEY` (vazias; fora do git) |
 

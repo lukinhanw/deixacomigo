@@ -17,7 +17,12 @@
 ## Fluxos (skills)
 - Revisar mudanças ou etapa: skill `revisao` (Codex+DeepSeek e DeepSeek exaustivo; `revisao-agy`
   para a terceira opinião). Revisão sempre em segundo plano.
-- Dar etapa ou correção por pronta: skill `verificar-etapa`.
+
+## Verificação
+Antes de dar uma etapa ou correção por pronta: rodar tipos/lint e testes do projeto. Se houver
+interface, abrir no navegador (Playwright), interagir, **tirar print, abrir o print e analisar**
+(o que está certo, o que está errado, o que mudou) e conferir o console. Prints ficam no
+scratchpad, não no repositório. No fim, dizer o que passou e o que ficou de fora.
 
 ## Busca no código (graphify)
 O grafo do código fica em `graphify-out/` (local, fora do git). O executável `graphify` está em

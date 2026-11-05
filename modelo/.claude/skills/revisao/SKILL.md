@@ -29,9 +29,9 @@ DeepSeek exaustivo acha mais, com ruído. Por isso rodam juntos.
 
 - O Codex quase não erra: é a lista mais confiável, mas confira mesmo assim. O exaustivo traz ruído:
   cada item é uma hipótese.
-- Prove com teste (script no scratchpad ou o fluxo de `verificar-etapa`) sempre que der.
+- Prove com teste (script no scratchpad, teste ou o navegador) sempre que der.
 - O que contradiz uma regra do README é decisão de design: relate ao usuário em vez de mudar.
-- Depois das correções, rode a skill `verificar-etapa`.
+- Depois das correções, rode a verificação (tipos, testes, navegador) descrita no CLAUDE.md.
 
 ## Falsos positivos já vistos neste projeto
 
