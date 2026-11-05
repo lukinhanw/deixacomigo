@@ -1,0 +1,4 @@
+graphify-out/
+.playwright-mcp/
+node_modules/
+# PREENCHER: pastas de assets, builds e dados que não são código do projeto
