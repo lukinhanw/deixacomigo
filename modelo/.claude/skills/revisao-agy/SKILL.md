@@ -33,7 +33,8 @@ Revise esse diff. Contexto do projeto: leia <raiz>/tools/revisao-contexto.md. O 
 
 ```bash
 #!/bin/bash
-export PATH="$PATH:$LOCALAPPDATA/agy/bin"   # Windows; em Linux/macOS, o diretório onde o agy foi instalado
+# No Git Bash o $LOCALAPPDATA vem com barras invertidas (C:\Users\...): converta com cygpath, senão o PATH não pega
+command -v agy >/dev/null || export PATH="$PATH:$(cygpath -u "$LOCALAPPDATA" 2>/dev/null)/agy/bin"
 S="$(cd "$(dirname "$0")" && pwd)"
 W() { cygpath -w "$1" 2>/dev/null || echo "$1"; }
 cd <raiz> || exit 1

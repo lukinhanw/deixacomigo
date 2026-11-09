@@ -3,12 +3,14 @@
 //
 // Uso:
 //   node tools/revisar-deepseek.mjs --patch etapa.patch --out revisao.md [--api deepseek|openrouter]
-//        [--root pasta] [--model id] [--effort high|max] [--extra arquivo]...
+//        [--root pasta] [--model id] [--effort high|max] [--extra arquivo]... [--tudo]
 //
 // --api     deepseek (padrão): API oficial, https://api.deepseek.com; openrouter: pelo OpenRouter
 // --root    pasta do código a revisar (padrão: a pasta atual)
 // --extra   arquivo a mais para dar contexto (pode repetir), relativo ao --root
 // --effort  raciocínio na API oficial (high é o padrão dela; max dá mais espaço de saída)
+// --tudo    inclui também as hipóteses de confiança baixa (mais cobertura, bem mais ruído). Sem isto, só entra o
+//           que tem cenário concreto no código mostrado: confiança média ou alta.
 // A chave vem da variável de ambiente (DEEPSEEK_API_KEY ou OPENROUTER_API_KEY) ou da linha
 // correspondente no .env.local da raiz do projeto (fora do git). Nunca no código.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -58,12 +60,22 @@ const contexto = existsSync(ctxFile)
   ? readFileSync(ctxFile, 'utf8').replace(/<!--[\s\S]*?-->/g, '').trim()
   : 'Projeto sem tools/revisao-contexto.md: infira a stack pelos arquivos.';
 
+const tudo = args.includes('--tudo');
 const system = [
-  'Você é um revisor de código sênior. Revise arquivo por arquivo, sem pular nenhum, e liste TODOS os',
+  'Você é um revisor de código sênior. Revise arquivo por arquivo, sem pular nenhum, e liste os',
   'bugs que encontrar: corrida, estado inconsistente, segurança (mensagem do cliente sem validar, sessão,',
   'SQL), vazamento de recurso, regressão, e também uso errado das bibliotecas do projeto.',
   'Para cada um: severidade (alta/média/baixa), confiança (alta/média/baixa), arquivo:linha e um cenário',
-  'concreto de falha. Na dúvida, inclua marcando confiança baixa em vez de omitir.',
+  'concreto de falha.',
+  tudo
+    ? 'Na dúvida, inclua marcando confiança baixa em vez de omitir.'
+    : [
+      'Só liste o que você consegue demonstrar com um cenário concreto no código mostrado (confiança média ou alta).',
+      'NÃO liste: hipóteses que dependem de código que você não viu; "se um cliente adulterado enviar..." quando o',
+      'servidor valida a mensagem; endurecimento genérico (mais um try/catch, mais uma guarda) sem falha concreta;',
+      'nem o que a seção "Falsos já vistos" de tools/revisao-contexto.md disser que já foi verificado e é falso.',
+      'Ordene da severidade maior para a menor e termine com uma tabela-resumo (#, severidade, confiança, local).',
+    ].join(' '),
   'Não comente estilo nem sugira refatoração. Responda em português do Brasil, em markdown.',
 ].join(' ');
 const user = [
