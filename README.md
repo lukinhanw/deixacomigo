@@ -21,7 +21,7 @@ Depois da primeira vez, a skill global `deixacomigo` fica instalada e basta dize
 
 | Item | O que é |
 | --- | --- |
-| `CLAUDE.md` | Idioma, cuidados (Codex só com DeepSeek, chaves, commits sem `Co-Authored-By`), fluxos e regra de busca pelo graphify |
+| `CLAUDE.md` | Idioma, cuidados (Codex normal ou com DeepSeek, chaves, commits sem `Co-Authored-By`), fluxos e regra de busca pelo graphify |
 | `.graphifyignore` | O que o grafo ignora |
 | `tools/codex-deepseek.sh` | Revisão do Codex usando a DeepSeek como modelo (sem gastar a assinatura da OpenAI) |
 | `tools/revisar-deepseek.mjs` | Revisão exaustiva (diff + arquivos inteiros) pela API da DeepSeek |

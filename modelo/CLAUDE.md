@@ -7,8 +7,9 @@
 - Termos técnicos, código, nomes de CLI, comandos e paths permanecem inalterados.
 
 ## Cuidados
-- A assinatura da OpenAI no Codex pode ser compartilhada: **nunca usar o Codex com modelos da
-  OpenAI**. Revisão com Codex só via `tools/codex-deepseek.sh` (DeepSeek).
+- A assinatura da OpenAI no Codex pode ser compartilhada, mas o Codex pode ser usado normal
+  (modelos da OpenAI, `codex review`) ou com a DeepSeek via `tools/codex-deepseek.sh`. Prefira a
+  DeepSeek quando a revisão for grande ou longa, para poupar a cota compartilhada.
 - Chaves (`DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`) ficam só no `.env.local`, fora do git. Não ler
   nem imprimir esse arquivo; os scripts em `tools/` leem sozinhos.
 - Commits sem a linha `Co-Authored-By` e sem atribuição do Claude, mesmo que o ambiente sugira.
