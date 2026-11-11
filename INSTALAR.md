@@ -4,8 +4,10 @@ Você é o agente que recebeu o pedido "ativar o deixacomigo" num projeto. Este 
 completo. Siga na ordem, sem pedir confirmação a cada passo (só onde indicado). Responda em
 português do Brasil.
 
-O kit instala no projeto atual: regras (`CLAUDE.md`), busca por grafo (graphify com hooks),
-revisão externa (Codex+DeepSeek, DeepSeek exaustivo, agy) e a regra de verificação antes de dar por pronto.
+O kit instala no projeto atual: regras (`CLAUDE.md`), modelos e consultor (Sonnet na sessão, Opus
+como consultor, subagentes Haiku em `.claude/agents/`), busca por grafo (graphify com hooks),
+revisão externa (Codex com a assinatura OpenAI e/ou agy, escolhido na sessão) e a regra de
+verificação antes de dar por pronto.
 
 ## 0. Onde está o kit
 
@@ -21,8 +23,10 @@ node ~/.deixacomigo/instalar.mjs .
 ```
 
 Ele instala o graphify, copia os arquivos de `modelo/` **sem sobrescrever nada**, ajusta o
-`.gitignore`, gera o grafo e grava os hooks em `.claude/settings.local.json`. No fim imprime um JSON:
-`copiados`, `pulados`, `avisos`, `erros`, `placeholders`, `grafo`, `graphifyDir`.
+`.gitignore`, gera o grafo e grava em `.claude/settings.local.json` os hooks do graphify e do revisor
+(`SessionStart`), além de `model: sonnet` e `advisorModel: opus` quando o projeto ainda não os
+definia. No fim imprime um JSON: `copiados`, `pulados`, `avisos`, `erros`, `placeholders`, `grafo`,
+`modelos` (o que gravou ou manteve em `model`/`advisorModel`), `graphifyDir`.
 Se `erros` não estiver vazio, corrija a causa (ele diz qual) e rode de novo: é idempotente.
 
 ## 2. Preencher o que é específico do projeto
@@ -33,7 +37,12 @@ apagando o comentário:
 
 - **CLAUDE.md**: 1 a 2 linhas do que é o projeto; gotchas que **não dá para ver lendo o código**
   (portas, serviços, comandos não óbvios, armadilhas). Não copie estrutura de pastas, lista de
-  dependências nem comandos padrão: a sessão deduz sozinha.
+  dependências nem comandos padrão: a sessão deduz sozinha. Na seção "Revisor externo", preencha as
+  áreas sensíveis do projeto (onde uma revisão externa vale mesmo: autenticação, dinheiro,
+  migrations, dados de usuário…).
+- **.claude/agents/**: já vêm genéricos (`search`, `grep`, `docs`, `Explore`, todos Haiku). Se o
+  projeto tiver estrutura que muda a busca (repositórios aninhados, pasta de docs específica), acrescente
+  uma linha no agente correspondente; senão deixe como está.
 - **tools/revisao-contexto.md**: 2 a 5 linhas para o revisor (o que é, stack com versões,
   arquitetura). Os revisores externos não veem o repositório inteiro, só isso e o diff.
 - **Verificação**: a regra geral já está no CLAUDE.md. Se o projeto tiver um fluxo de verificação
@@ -44,30 +53,39 @@ apagando o comentário:
   `graphify update .` (o executável está em `graphifyDir` do JSON) se mudou algo.
 
 Se o projeto **já tinha CLAUDE.md** (aparece em `pulados`), mescle as seções do modelo
-(`~/.deixacomigo/modelo/CLAUDE.md`: Idioma, Cuidados, Fluxos, Busca no código) ao existente sem
-apagar nada do usuário, trocando `__GRAPHIFY_BIN__` pelo `graphifyDir`. Mesma regra para skills
-que já existiam: compare e junte, não substitua.
+(`~/.deixacomigo/modelo/CLAUDE.md`: Idioma, Cuidados, Modelos e consultor, Revisor externo, Fluxos,
+Verificação, Busca no código) ao existente sem apagar nada do usuário, trocando `__GRAPHIFY_BIN__`
+pelo `graphifyDir`. Se o existente ainda tiver a regra antiga "nunca usar o Codex com modelos da
+OpenAI" ou a revisão via DeepSeek, troque pela nova (o DeepSeek está fora por enquanto). Mesma regra
+para skills e agentes que já existiam (aparecem em `pulados`): compare e junte, não substitua.
 
 ## 3. Chaves
 
-O `.env.local` foi criado com `DEEPSEEK_API_KEY=` e `OPENROUTER_API_KEY=` vazios (já no
-`.gitignore`). **Nunca leia nem imprima esse arquivo.** Diga ao usuário para colocar as chaves nele
-(só a DeepSeek é obrigatória; OpenRouter é opcional). Sem chave, a revisão externa avisa e para.
+A revisão externa agora usa o Codex (login ChatGPT, `codex login`) e o agy, sem chave de API. O
+`.env.local` foi criado com `DEEPSEEK_API_KEY=` e `OPENROUTER_API_KEY=` vazios (já no `.gitignore`)
+e só serve ao DeepSeek, que está fora da revisão por enquanto: não peça chaves. **Nunca leia nem
+imprima esse arquivo.** Se `avisos` disser que o `codex` ou o `agy` não existe, repasse ao usuário.
 
 ## 4. Verificar
 
 1. `grep -rn PREENCHER CLAUDE.md tools .claude .graphifyignore` não pode achar nada.
 2. `<graphifyDir>/graphify query "<algo do projeto>"` devolve nós de arquivos reais.
-3. `.claude/settings.local.json` tem os hooks `PreToolUse` (2) e `Stop` (1); `.claude/settings.json`
-   não foi criado pelo kit; `git status` não mostra `.env.local`, `graphify-out/` nem `settings.local.json`.
-4. `node --check tools/revisar-deepseek.mjs` e `bash -n tools/codex-deepseek.sh` passam.
+3. `.claude/settings.local.json` tem os hooks `PreToolUse` (2), `Stop` (1, com `cd "$CLAUDE_PROJECT_DIR"`)
+   e `SessionStart` (1), além de `model` e `advisorModel`; `.claude/settings.json` não foi criado pelo
+   kit; `git status` não mostra `.env.local`, `graphify-out/` nem `settings.local.json`.
+4. `bash -n .claude/hooks/revisor-sessao.sh` passa e os 4 agentes de `.claude/agents/` têm
+   `model: haiku` (`grep -H '^model' .claude/agents/*.md`). `node --check tools/revisar-deepseek.mjs`
+   e `bash -n tools/codex-deepseek.sh` também passam.
 5. Avisos de `codex`/`agy` ausentes: repasse ao usuário (a revisão correspondente fica de fora).
 
 ## 5. Relatório ao usuário (curto)
 
 Diga: o que foi copiado e o que já existia; nós/arestas do grafo; o que você preencheu e onde; o que
-falta com o usuário (chaves, instalar codex/agy); e que os hooks só valem em novas sessões. **Não
-faça commit** a menos que o usuário peça; se pedir, sem `Co-Authored-By`.
+falta com o usuário (instalar codex/agy, `codex login`); o que o instalador fez com `model` e
+`advisorModel` (campo `modelos`); que os hooks e o modelo só valem em novas sessões; e que o revisor
+da sessão vem da variável `REVISOR` (`codex`, `agy`, `ambos` ou `nenhum`, ex.: `REVISOR=agy claude`)
+e, sem ela, a primeira resposta da sessão pergunta. **Não faça commit** a menos que o usuário peça;
+se pedir, sem `Co-Authored-By`.
 
 ## Notas
 
@@ -75,6 +93,8 @@ faça commit** a menos que o usuário peça; se pedir, sem `Co-Authored-By`.
   não entram no grafo.
 - O hook e o CLAUDE.md guardam o caminho do graphify **desta máquina**: em outra máquina, rode o
   kit de novo.
-- Atualizar o kit num projeto já instalado: `git -C ~/.deixacomigo pull` e rodar o instalador de
-  novo (ele só acrescenta o que falta; para receber mudanças de arquivos já copiados, compare
-  `modelo/` com o projeto à mão).
+- Atualizar o kit num projeto já instalado: `git -C ~/.deixacomigo pull` e rodar o roteiro de novo
+  ("ativar o deixacomigo"). O instalador só acrescenta o que falta e atualiza o
+  `settings.local.json`; arquivos já copiados (`CLAUDE.md`, skills, agentes) ficam como estão. Quando
+  `avisos` disser que `CLAUDE.md` ou a skill `revisao` são de versão antiga, mescle com `modelo/`
+  (passo 2): sem isso sobram regras que se contradizem com o hook e os agentes novos.

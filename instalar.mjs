@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 const aqui = dirname(fileURLToPath(import.meta.url));
 const proj = resolve(process.argv[2] ?? process.cwd());
 const win = process.platform === 'win32';
-const resumo = { projeto: proj, copiados: [], pulados: [], avisos: [], erros: [], placeholders: [], grafo: null };
+const resumo = { projeto: proj, copiados: [], pulados: [], avisos: [], erros: [], placeholders: [], grafo: null, modelos: {} };
 const log = (m) => console.error(`[deixacomigo] ${m}`);
 
 const run = (cmd, args, opts = {}) =>
@@ -27,9 +27,9 @@ if (!existsSync(join(proj, '.git'))) fim('o projeto precisa ser um repositório 
 const python = ['python', 'python3', 'py'].find((p) => tem(p));
 if (!python) fim('python não encontrado (o graphify precisa de Python 3 + pip)');
 if (!tem('git')) fim('git não encontrado');
-if (!tem('codex')) resumo.avisos.push('codex CLI não encontrado: a revisão Codex+DeepSeek não vai rodar até instalar (npm i -g @openai/codex)');
+if (!tem('codex')) resumo.avisos.push('codex CLI não encontrado: a revisão Codex não vai rodar até instalar (npm i -g @openai/codex) e fazer `codex login`');
 if (!tem('agy', ['--help']) && !existsSync(join(process.env.LOCALAPPDATA ?? '', 'agy', 'bin')))
-  resumo.avisos.push('agy não encontrado: a revisão opcional pelo Antigravity fica de fora');
+  resumo.avisos.push('agy não encontrado: a revisão pelo Antigravity fica de fora');
 
 // 2. graphify: instala o pacote e descobre o caminho do executável
 log('instalando/atualizando o graphify (pip)…');
@@ -61,10 +61,18 @@ function copiar(origem, destino) {
 }
 copiar(join(aqui, 'modelo'), proj);
 
-// CLAUDE.md recém-copiado: grava o caminho real do graphify
-const claudeMd = join(proj, 'CLAUDE.md');
-if (resumo.copiados.includes('CLAUDE.md')) {
-  writeFileSync(claudeMd, readFileSync(claudeMd, 'utf8').replaceAll('__GRAPHIFY_BIN__', gDir));
+// Arquivos que o projeto já tinha (pulados) com as regras antigas de revisão: o instalador não os
+// sobrescreve, então avisa para o agente mesclar (INSTALAR.md, passo 2). Senão sobram regras que se
+// contradizem (ex.: "nunca usar o Codex com modelos da OpenAI") com o hook e a skill novos.
+for (const rel of ['CLAUDE.md', '.claude/skills/revisao/SKILL.md']) {
+  if (resumo.pulados.includes(rel) && /nunca usar o Codex/i.test(readFileSync(join(proj, rel), 'utf8')))
+    resumo.avisos.push(`${rel} é de uma versão antiga do kit (Codex só com DeepSeek): mescle com modelo/${rel} (INSTALAR.md, passo 2)`);
+}
+
+// CLAUDE.md e agentes recém-copiados: gravam o caminho real do graphify
+for (const rel of resumo.copiados.filter((c) => c === 'CLAUDE.md' || /^\.claude\/agents\/.+\.md$/.test(c))) {
+  const arq = join(proj, rel);
+  writeFileSync(arq, readFileSync(arq, 'utf8').replaceAll('__GRAPHIFY_BIN__', gDir));
 }
 
 // 4. .gitignore
@@ -109,11 +117,27 @@ const garante = (evento, matcher, comando, timeout) => {
 };
 garante('PreToolUse', 'Bash|Grep', `${gBin} hook-guard search`, 10);
 garante('PreToolUse', 'Read|Glob', `${gBin} hook-guard read`, 10);
-garante('Stop', null, `${gBin} update .`, 60);
+// Stop: o `cd` evita um graphify-out aninhado quando o cwd da sessão está numa subpasta.
+// Projetos instalados antes gravaram `graphify update .` sem o `cd`: troca pela forma nova.
+const stopAntigo = `${gBin} update .`;
+if (Array.isArray(cfg.hooks.Stop)) {
+  cfg.hooks.Stop = cfg.hooks.Stop
+    .map((e) => ({ ...e, hooks: (e.hooks ?? []).filter((h) => h.command !== stopAntigo) }))
+    .filter((e) => e.hooks.length);
+}
+garante('Stop', null, `cd "$CLAUDE_PROJECT_DIR" && ${gBin} update .`, 60);
+// SessionStart: informa o revisor externo da sessão (variável REVISOR; sem ela o Claude pergunta).
+if (existsSync(join(proj, '.claude', 'hooks', 'revisor-sessao.sh')))
+  garante('SessionStart', 'startup|clear', 'bash "$CLAUDE_PROJECT_DIR/.claude/hooks/revisor-sessao.sh"', 5);
+// Modelo da sessão e consultor: só grava se o projeto ainda não definiu.
+for (const [chave, valor] of [['model', 'sonnet'], ['advisorModel', 'opus']]) {
+  if (cfg[chave] === undefined) { cfg[chave] = valor; resumo.modelos[chave] = `gravado (${valor})`; }
+  else resumo.modelos[chave] = `mantido (${cfg[chave]})`;
+}
 const novo = JSON.stringify(cfg, null, 2) + '\n';
 if (!existsSync(local) || readFileSync(local, 'utf8') !== novo) {
   writeFileSync(local, novo);
-  resumo.copiados.push('.claude/settings.local.json (hooks do graphify, mesclados)');
+  resumo.copiados.push('.claude/settings.local.json (hooks do graphify e do revisor, modelo e consultor, mesclados)');
 }
 
 // 6. Skill global "deixacomigo" para o gatilho "ativar o deixacomigo"
@@ -131,7 +155,7 @@ const varre = (dir) => {
       resumo.placeholders.push(relative(proj, p).replace(/\\/g, '/'));
   }
 };
-for (const alvo of ['CLAUDE.md', 'tools', '.claude/skills', '.graphifyignore']) {
+for (const alvo of ['CLAUDE.md', 'tools', '.claude/skills', '.claude/agents', '.graphifyignore']) {
   const p = join(proj, alvo);
   if (!existsSync(p)) continue;
   if (statSync(p).isDirectory()) varre(p);
