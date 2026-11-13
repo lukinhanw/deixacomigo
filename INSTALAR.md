@@ -70,11 +70,14 @@ imprima esse arquivo.** Se `avisos` disser que o `codex` ou o `agy` não existe,
 
 1. `grep -rn PREENCHER CLAUDE.md tools .claude .graphifyignore` não pode achar nada.
 2. `<graphifyDir>/graphify query "<algo do projeto>"` devolve nós de arquivos reais.
-3. `.claude/settings.local.json` tem os hooks `PreToolUse` (2), `Stop` (1, com `cd "$CLAUDE_PROJECT_DIR"`)
+3. `.claude/settings.local.json` tem os hooks `PreToolUse` (4: 2 do graphify e 2 do `graphify-primeiro.py`,
+   `marca` e `exige`), `Stop` (1, com `cd "$CLAUDE_PROJECT_DIR"`)
    e `SessionStart` (1), além de `model` e `advisorModel`; `.claude/settings.json` não foi criado pelo
    kit; `git status` não mostra `.env.local`, `graphify-out/` nem `settings.local.json`.
-4. `bash -n .claude/hooks/revisor-sessao.sh` passa e os 4 agentes de `.claude/agents/` têm
-   `model: haiku` (`grep -H '^model' .claude/agents/*.md`). `node --check tools/revisar-deepseek.mjs`
+4. `bash -n .claude/hooks/revisor-sessao.sh` e `python3 -B -c "import ast;ast.parse(open('.claude/hooks/graphify-primeiro.py').read())"`
+   passam e os 4 agentes de leitura de `.claude/agents/` têm
+   `model: haiku` e o `revisor` tem `model: sonnet` (`grep -H '^model' .claude/agents/*.md`). `node --check tools/revisar-deepseek.mjs`,
+   `node --check tools/revisar-agy.mjs`, `node --test tools/revisar-agy.test.mjs tools/montar-pacote.test.mjs` (sem modelo, não gasta cota)
    e `bash -n tools/codex-deepseek.sh` também passam.
 5. Avisos de `codex`/`agy` ausentes: repasse ao usuário (a revisão correspondente fica de fora).
 

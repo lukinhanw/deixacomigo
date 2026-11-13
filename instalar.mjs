@@ -79,7 +79,7 @@ for (const rel of resumo.copiados.filter((c) => c === 'CLAUDE.md' || /^\.claude\
 const gi = join(proj, '.gitignore');
 let giTxt = existsSync(gi) ? readFileSync(gi, 'utf8') : '';
 const linhas = giTxt.split(/\r?\n/).map((l) => l.trim());
-const falta = ['.env.local', '.claude/settings.local.json', 'graphify-out/'].filter((l) => !linhas.includes(l));
+const falta = ['.env.local', '.claude/settings.local.json', 'graphify-out/', '.revisao-agy/'].filter((l) => !linhas.includes(l));
 if (falta.length) {
   if (giTxt && !giTxt.endsWith('\n')) giTxt += '\n';
   writeFileSync(gi, `${giTxt}\n# deixacomigo\n${falta.join('\n')}\n`);
@@ -117,6 +117,13 @@ const garante = (evento, matcher, comando, timeout) => {
 };
 garante('PreToolUse', 'Bash|Grep', `${gBin} hook-guard search`, 10);
 garante('PreToolUse', 'Read|Glob', `${gBin} hook-guard read`, 10);
+// Graphify primeiro: bloqueia a primeira exploração de código da sessão até haver uma consulta ao grafo
+// (`marca` registra a consulta, `exige` bloqueia). Só atua em projeto com graphify-out/graph.json.
+if (existsSync(join(proj, '.claude', 'hooks', 'graphify-primeiro.py'))) {
+  const gp = `${python} "$CLAUDE_PROJECT_DIR/.claude/hooks/graphify-primeiro.py"`;
+  garante('PreToolUse', 'Bash', `${gp} marca`, 5);
+  garante('PreToolUse', 'Read|Grep|Glob|Bash', `${gp} exige`, 5);
+}
 // Stop: o `cd` evita um graphify-out aninhado quando o cwd da sessão está numa subpasta.
 // Projetos instalados antes gravaram `graphify update .` sem o `cd`: troca pela forma nova.
 const stopAntigo = `${gBin} update .`;
