@@ -24,17 +24,16 @@ Sessão principal no Sonnet, com Opus como consultor (`advisorModel` em `.claude
 - Não releia o que já está no contexto nem peça a um subagente algo que a conversa já respondeu.
 
 ## Revisor
-Opções: `sonnet` (padrão: subagente interno `revisor`, em Sonnet, com contexto limpo), `agy` (Antigravity CLI; o script usa por padrão `gemini-4-hydrogen-medium`, ajuste com `--model`; se falhar, use o `sonnet` no mesmo pacote), `codex` (só se houver a assinatura), `ambos` ou `nenhum`. O DeepSeek está fora da revisão por enquanto.
-- Na sessão principal, o hook `SessionStart` (`.claude/hooks/revisor-sessao.sh`) informa o revisor a partir da variável `REVISOR` (ex.: `REVISOR=agy claude`). Se não estiver definido, a primeira resposta da sessão começa perguntando ao usuário (AskUserQuestion) qual usar.
+O revisor padrão é o `agy` (Antigravity CLI; o script usa `gemini-4-hydrogen-medium`, ajuste com `--model`), fixado por `REVISOR=agy` em `.claude/settings.local.json`. Se o agy falhar (503/429, timeout, login expirado), use o `sonnet` (subagente interno `revisor`, contexto limpo) no mesmo pacote. Outras opções: `sonnet` e `nenhum`. **O Codex não é mais usado** para revisão, e o DeepSeek também está fora: não os ofereça nem pergunte por eles.
+- Na sessão principal, o hook `SessionStart` (`.claude/hooks/revisor-sessao.sh`) informa o revisor a partir da variável `REVISOR` (ex.: `REVISOR=agy claude`). O padrão já vem definido, então não pergunte qual revisor usar no começo da sessão.
 - O usuário pode trocar no meio da sessão (ex.: "revisor agy"); vale a escolha mais recente, sem perguntar de novo.
-- Rode a revisão (skill `revisao`, com o revisor da sessão) sempre que julgar necessário, sem pedir licença: o usuário aceita o consumo (no `sonnet`, são tokens do Claude: ~100 mil por pacote grande, medido). Referência de quando vale: mudança de comportamento em código, sobretudo <!-- PREENCHER: áreas sensíveis deste projeto (ex.: autenticação, dinheiro, migrations, dados de usuário) -->, e antes de commitar. Texto, configuração e ajuste trivial não precisam. Com `nenhum`, não rode revisão sem pedido.
-- `sonnet`: monte o pacote (`node tools/montar-pacote.mjs --out <scratchpad>/revisao`, com `--repo <pasta>` por repositório aninhado) e chame o subagente `revisor` com o caminho de cada pacote; triar pela "Prova" de cada achado (rodar o teste ou comando) em vez de reler o código. O revisor não vê a conversa de propósito: não repasse o raciocínio do autor.
-- Codex, quando existir, só como revisor, pela skill `revisao`; o agente `codex:rescue` e as skills `codex:*` só quando o usuário pedir.
+- Rode a revisão (skill `revisao`, com o revisor da sessão) sempre que julgar necessário, sem pedir licença: o usuário aceita o consumo (no `sonnet` de reserva, são tokens do Claude: ~100 mil por pacote grande, medido). Referência de quando vale: mudança de comportamento em código, sobretudo <!-- PREENCHER: áreas sensíveis deste projeto (ex.: autenticação, dinheiro, migrations, dados de usuário) -->, e antes de commitar. Texto, configuração e ajuste trivial não precisam. Com `nenhum`, não rode revisão sem pedido.
+- Pacote para o `sonnet` (e para o agy, que usa o mesmo): monte o pacote (`node tools/montar-pacote.mjs --out <scratchpad>/revisao`, com `--repo <pasta>` por repositório aninhado) e chame o subagente `revisor` com o caminho de cada pacote; triar pela "Prova" de cada achado (rodar o teste ou comando) em vez de reler o código. O revisor não vê a conversa de propósito: não repasse o raciocínio do autor.
+- Não use o agente `codex:rescue` nem as skills `codex:*`.
 - Subagentes ignoram esta seção.
 
 ## Fluxos (skills)
-- Revisar mudanças ou etapa: skill `revisao` (Codex e/ou agy, conforme o revisor da sessão; o agy
-  segue a skill `revisao-agy`). Revisão sempre em segundo plano.
+- Revisar mudanças ou etapa: skill `revisao` (agy por padrão, que segue a skill `revisao-agy`; `sonnet` de reserva). Revisão sempre em segundo plano.
 
 ## Verificação
 Antes de dar uma etapa ou correção por pronta: rodar tipos/lint e testes do projeto. Se houver

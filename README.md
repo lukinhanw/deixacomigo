@@ -3,7 +3,7 @@
 Kit para deixar um projeto pronto para trabalhar com o Claude Code do mesmo jeito: regras enxutas no
 `CLAUDE.md`, busca no código por grafo (**graphify**, com hooks que mantêm o grafo atualizado),
 **modelos e consultor** (Sonnet na sessão, Opus como consultor, subagentes Haiku só de leitura),
-**revisão externa** (Codex com a assinatura OpenAI e/ou Antigravity, à escolha na sessão) e a regra de verificação
+**revisão externa** (Antigravity, `agy`, por padrão, com o Sonnet de reserva) e a regra de verificação
 antes de dar algo por pronto.
 
 ## Como ativar
@@ -28,7 +28,7 @@ Depois da primeira vez, a skill global `deixacomigo` fica instalada e basta dize
 | `.claude/hooks/revisor-sessao.sh` | Hook `SessionStart`: informa o revisor da sessão (variável `REVISOR`); sem ela, o Claude pergunta |
 | `.claude/hooks/graphify-primeiro.py` | Hook `PreToolUse` (modos `marca` e `exige`): bloqueia a primeira exploração de código da sessão (`Read`/`Grep`/`Glob` e `grep`/`rg`/`find` no Bash) até haver uma consulta ao graphify; depois libera. Docs, `.claude/`, `tools/` e arquivos fora do projeto passam; sem `graphify-out/graph.json` não atua. Para economizar tokens |
 | `tools/revisao-contexto.md` | Descrição do projeto que os revisores recebem |
-| `.claude/skills/revisao`, `revisao-agy` | Fluxos de revisão (`sonnet` com o subagente `revisor`, padrão; agy e Codex opcionais) |
+| `.claude/skills/revisao`, `revisao-agy` | Fluxos de revisão (`agy` por padrão; `sonnet` com o subagente `revisor` de reserva) |
 | `tools/montar-pacote.mjs`, `tools/montar-pacote.test.mjs` | Monta o pacote de revisão (contexto, regras, falsos positivos, diff e arquivos alterados) sem chamar modelo nenhum e sem `git add -N`; é a entrada do subagente `revisor` (revisor padrão `sonnet`) |
 | `tools/revisar-agy.mjs`, `tools/revisar-agy.test.mjs` | Revisão com o agy por script (Node puro): monta um pacote com diff e arquivos alterados (sem `git add -N`), conta chamadas de ferramenta pelo `stream-json`, encerra ao estourar o orçamento ou o tempo, faz uma única retomada da sessão, trata erro de capacidade (503/429) sem retomar e grava `achados-*.md`, `parcial-*.md` e `metricas.jsonl`. Testes: `node --test tools/revisar-agy.test.mjs` |
 | `tools/codex-deepseek.sh`, `tools/revisar-deepseek.mjs` | Revisão com DeepSeek. **Fora da revisão por enquanto**; ficam no kit para uso futuro |
@@ -37,8 +37,8 @@ Depois da primeira vez, a skill global `deixacomigo` fica instalada e basta dize
 
 ## Pré-requisitos
 
-Obrigatórios: `git`, `node`, `python` 3 com `pip`. Opcionais: `codex` (revisão Codex, com
-`codex login`) e `agy` (Antigravity). O instalador avisa o que faltar. Nenhuma chave de API é
+Obrigatórios: `git`, `node`, `python` 3 com `pip`. Opcional: `agy` (Antigravity, o
+revisor padrão; sem ele a revisão cai para o Sonnet). O instalador avisa o que faltar. Nenhuma chave de API é
 necessária.
 
 ## Segurança
@@ -46,8 +46,7 @@ necessária.
 - Chaves só no `.env.local` de cada projeto, nunca no kit nem no git.
 - O instalador nunca sobrescreve arquivos existentes e nunca grava em `.claude/settings.json`. A única
   exceção é o `.claude/settings.local.json`, que ele mescla: troca o hook `Stop` antigo
-  (`graphify update .`, sem `cd`) pelo novo, preserva os hooks do usuário e só grava `model` e
-  `advisorModel` se ainda não existirem.
+  (`graphify update .`, sem `cd`) pelo novo, preserva os hooks do usuário e só grava `model`, `advisorModel` e `env.REVISOR` (`agy`) se ainda não existirem.
 - Nenhum commit é feito sem pedido.
 
 ## Atualizar

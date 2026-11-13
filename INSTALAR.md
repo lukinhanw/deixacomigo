@@ -6,7 +6,7 @@ português do Brasil.
 
 O kit instala no projeto atual: regras (`CLAUDE.md`), modelos e consultor (Sonnet na sessão, Opus
 como consultor, subagentes Haiku em `.claude/agents/`), busca por grafo (graphify com hooks),
-revisão externa (Codex com a assinatura OpenAI e/ou agy, escolhido na sessão) e a regra de
+revisão externa (agy por padrão, com o Sonnet de reserva) e a regra de
 verificação antes de dar por pronto.
 
 ## 0. Onde está o kit
@@ -61,10 +61,10 @@ para skills e agentes que já existiam (aparecem em `pulados`): compare e junte,
 
 ## 3. Chaves
 
-A revisão externa agora usa o Codex (login ChatGPT, `codex login`) e o agy, sem chave de API. O
+A revisão externa usa o agy (login do Antigravity) e, de reserva, o subagente Sonnet, sem chave de API. O Codex não é mais usado. O
 `.env.local` foi criado com `DEEPSEEK_API_KEY=` e `OPENROUTER_API_KEY=` vazios (já no `.gitignore`)
 e só serve ao DeepSeek, que está fora da revisão por enquanto: não peça chaves. **Nunca leia nem
-imprima esse arquivo.** Se `avisos` disser que o `codex` ou o `agy` não existe, repasse ao usuário.
+imprima esse arquivo.** Se `avisos` disser que o `agy` não existe, repasse ao usuário.
 
 ## 4. Verificar
 
@@ -79,15 +79,15 @@ imprima esse arquivo.** Se `avisos` disser que o `codex` ou o `agy` não existe,
    `model: haiku` e o `revisor` tem `model: sonnet` (`grep -H '^model' .claude/agents/*.md`). `node --check tools/revisar-deepseek.mjs`,
    `node --check tools/revisar-agy.mjs`, `node --test tools/revisar-agy.test.mjs tools/montar-pacote.test.mjs` (sem modelo, não gasta cota)
    e `bash -n tools/codex-deepseek.sh` também passam.
-5. Avisos de `codex`/`agy` ausentes: repasse ao usuário (a revisão correspondente fica de fora).
+5. Aviso de `agy` ausente: repasse ao usuário (a revisão cai para o `sonnet`). Confira também `.claude/settings.local.json`: `env.REVISOR` deve ser `agy`.
 
 ## 5. Relatório ao usuário (curto)
 
 Diga: o que foi copiado e o que já existia; nós/arestas do grafo; o que você preencheu e onde; o que
-falta com o usuário (instalar codex/agy, `codex login`); o que o instalador fez com `model` e
+falta com o usuário (instalar o agy e fazer login nele); o que o instalador fez com `model` e
 `advisorModel` (campo `modelos`); que os hooks e o modelo só valem em novas sessões; e que o revisor
-da sessão vem da variável `REVISOR` (`codex`, `agy`, `ambos` ou `nenhum`, ex.: `REVISOR=agy claude`)
-e, sem ela, a primeira resposta da sessão pergunta. **Não faça commit** a menos que o usuário peça;
+da sessão vem da variável `REVISOR` (`agy`, `sonnet` ou `nenhum`), que o instalador grava como `agy`
+em `.claude/settings.local.json` (campo `modelos`), então a sessão não pergunta qual usar. **Não faça commit** a menos que o usuário peça;
 se pedir, sem `Co-Authored-By`.
 
 ## Notas

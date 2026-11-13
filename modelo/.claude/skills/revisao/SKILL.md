@@ -1,33 +1,26 @@
 ---
 name: revisao
-description: Revisão do projeto com o revisor escolhido na sessão — sonnet (subagente `revisor`, padrão), agy (Antigravity) ou Codex quando existir — e depois triagem com prova. Use ao revisar uma etapa, um conjunto de mudanças ou antes de commitar.
+description: Revisão do projeto com o revisor da sessão — agy (Antigravity, padrão) ou sonnet (subagente `revisor`, reserva) — e depois triagem com prova. Use ao revisar uma etapa, um conjunto de mudanças ou antes de commitar.
 ---
 
 # Revisão externa
 
-Revisores: `sonnet`, `agy`, `codex`, `ambos` ou `nenhum` (escolha e troca: seção "Revisor" do CLAUDE.md).
-Use o revisor da sessão; se ainda não houver um, pergunte ao usuário antes de rodar.
+Revisores: `agy` (padrão), `sonnet` (reserva) ou `nenhum` (seção "Revisor" do CLAUDE.md). O Codex não é mais usado.
+Use o revisor da sessão (o padrão vem de `REVISOR` em `.claude/settings.local.json`); não pergunte qual usar.
 O DeepSeek (`tools/codex-deepseek.sh`, `tools/revisar-deepseek.mjs`) está fora por enquanto: não rode.
 
 ## 1. Preparar
 
 - Se o projeto tiver repositórios git aninhados ou independentes (ex.: `back/` e `front/`), revise cada um dentro da própria pasta.
-- Só para o Codex: arquivo novo precisa estar no índice (`git add -N`) para aparecer no diff (o script do agy dispensa isso). Se usar, desfaça com `git reset -- <arquivos>` antes de commitar ou limpar.
+- Não use `git add -N` nem `git reset` por causa da revisão: os scripts leem as mudanças sem mexer no índice.
 - Base: `--uncommitted` se nada foi commitado; senão o commit anterior à etapa.
 
-## 2. Rodar (Bash, sempre com `run_in_background`; com `ambos`, os dois em paralelo)
+## 2. Rodar (Bash, sempre com `run_in_background`)
 
-- **sonnet** (padrão): gera os pacotes e chama o subagente `revisor` (Sonnet, contexto limpo, só leitura) com o caminho de cada um:
+- **sonnet** (reserva, ou se o usuário pedir): gera os pacotes e chama o subagente `revisor` (Sonnet, contexto limpo, só leitura) com o caminho de cada um:
   `node tools/montar-pacote.mjs --out <scratchpad>/revisao` (com `--repo <pasta>` para cada repositório aninhado) imprime uma linha por
   pacote; um `Agent` com `subagent_type: revisor` por pacote (em paralelo se forem vários e independentes). Não repasse o raciocínio do
   autor: o revisor não vê a conversa de propósito. Nada de `git add -N` aqui. Cada achado vem com "Prova" (teste ou comando): rode a prova para triar.
-- **Codex** (só se houver a assinatura; modelo padrão do `~/.codex/config.toml`, assinatura OpenAI), dentro do repositório:
-  `cd <repositório> && codex review --uncommitted > <scratchpad>/revisao/codex.md 2> <scratchpad>/revisao/codex.err`
-  Já commitado: `--base <branch>` ou `--commit <SHA>`. O Codex lê o `AGENTS.md` do repositório, se houver;
-  um projeto só com `CLAUDE.md` não passa as regras a ele. O `codex review` aceita um `[PROMPT]` com
-  instruções customizadas (ex.: apontar o `CLAUDE.md`); não foi testado junto com `--uncommitted`.
-  Leva de 5 a 15 min. Se falhar por login, avise o usuário (`codex login`). O sandbox do Codex pode negar o
-  Docker: ele revisa o código, mas não roda os testes.
 - **agy**: siga a skill `revisao-agy`: `node tools/revisar-agy.mjs --out <scratchpad>/revisao` (Gemini, assinatura
   do Antigravity). O script fecha o escopo, limita as ferramentas e nunca devolve saída vazia em silêncio. Se falhar (503/429, timeout, login expirado), rode o sonnet no mesmo pacote.
 

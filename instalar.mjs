@@ -27,7 +27,6 @@ if (!existsSync(join(proj, '.git'))) fim('o projeto precisa ser um repositório 
 const python = ['python', 'python3', 'py'].find((p) => tem(p));
 if (!python) fim('python não encontrado (o graphify precisa de Python 3 + pip)');
 if (!tem('git')) fim('git não encontrado');
-if (!tem('codex')) resumo.avisos.push('codex CLI não encontrado: a revisão Codex não vai rodar até instalar (npm i -g @openai/codex) e fazer `codex login`');
 if (!tem('agy', ['--help']) && !existsSync(join(process.env.LOCALAPPDATA ?? '', 'agy', 'bin')))
   resumo.avisos.push('agy não encontrado: a revisão pelo Antigravity fica de fora');
 
@@ -141,6 +140,10 @@ for (const [chave, valor] of [['model', 'sonnet'], ['advisorModel', 'opus']]) {
   if (cfg[chave] === undefined) { cfg[chave] = valor; resumo.modelos[chave] = `gravado (${valor})`; }
   else resumo.modelos[chave] = `mantido (${cfg[chave]})`;
 }
+// Revisor da sessão: agy por padrão (sonnet de reserva). O hook revisor-sessao.sh lê REVISOR; sem ele o Claude perguntaria.
+cfg.env ??= {};
+if (cfg.env.REVISOR === undefined) { cfg.env.REVISOR = 'agy'; resumo.modelos.REVISOR = 'gravado (agy)'; }
+else resumo.modelos.REVISOR = `mantido (${cfg.env.REVISOR})`;
 const novo = JSON.stringify(cfg, null, 2) + '\n';
 if (!existsSync(local) || readFileSync(local, 'utf8') !== novo) {
   writeFileSync(local, novo);
